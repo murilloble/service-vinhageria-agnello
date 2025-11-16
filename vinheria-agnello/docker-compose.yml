@@ -1,0 +1,65 @@
+version: '3.8'
+services:
+  dnsmasq:
+    image: andyshinn/dnsmasq:2.78
+    volumes:
+      - ./dnsmasq/dnsmasq.conf:/etc/dnsmasq.conf:ro
+    networks:
+      appnet:
+        ipv4_address: 172.28.0.2
+    ports:
+      - "53:53/udp"
+
+  product-service:
+    build: ./product-service
+    environment:
+      - JWT_SECRET=vinheria-secret-key-which-is-long-enough
+    networks:
+      appnet:
+        ipv4_address: 172.28.0.10
+
+  order-service:
+    build: ./order-service
+    environment:
+      - JWT_SECRET=vinheria-secret-key-which-is-long-enough
+      - PRODUCT_SERVICE_URL=http://product-service:3001
+    networks:
+      appnet:
+        ipv4_address: 172.28.0.11
+
+  nginx:
+    image: nginx:stable-alpine
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      - product-service
+      - order-service
+    networks:
+      appnet:
+        ipv4_address: 172.28.0.20
+    ports:
+      - "8443:443"
+
+  jenkins:
+    image: jenkins/jenkins:lts
+    user: root
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8080:8080"
+    networks:
+      appnet:
+        ipv4_address: 172.28.0.30
+
+networks:
+  appnet:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  jenkins_home:

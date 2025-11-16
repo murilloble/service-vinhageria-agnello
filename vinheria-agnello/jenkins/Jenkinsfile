@@ -1,0 +1,21 @@
+pipeline {
+  agent any
+  stages {
+    stage('Checkout') {
+      steps {
+        git url: 'https://seu.git.repo/vinheria-agnello-sim-java.git'
+      }
+    }
+    stage('Build Services') {
+      steps {
+        sh 'mvn -q -DskipTests package'
+      }
+    }
+    stage('Publish Artifact (simulado)') {
+      steps {
+        sh 'mkdir -p /opt/vinheria/publish/product && echo "product built" > /opt/vinheria/publish/product/index.txt'
+        sh 'mkdir -p /opt/vinheria/publish/order && echo "order built" > /opt/vinheria/publish/order/index.txt'
+      }
+    }
+  }
+}
